@@ -22,6 +22,7 @@ public:
 
     struct PrivateKey {
         std::bitset<N> permutation; // Permuted positions (identity here)
+        PublicKey pk; // Store public key for decoding
     };
 
     struct CipherText {
@@ -42,9 +43,42 @@ public:
             pk.G[i].reset();
             pk.G[i].set(i); // Identity generator (trivial code)
         }
-        sk.permutation.reset();
+       // sk.permutation.reset();
         for (int i = 0; i < N; ++i) sk.permutation.set(i); // Identity permutation
     }
+#include <QVector>
+#include <QRandomGenerator>
+
+// Convert bitset to QVector<bool>, shuffle, and convert back
+void shuffleBitset(std::bitset<256>& bits) {
+    QVector<bool> bitVector;
+    for (int i = 0; i < 256; ++i) {
+        bitVector.append(bits[i]);
+    }
+
+    std::shuffle(bitVector.begin(), bitVector.end(), *QRandomGenerator::global());
+
+    for (int i = 0; i < 256; ++i) {
+        bits[i] = bitVector[i];
+    }
+}
+
+    void keygen3(PublicKey &pk, PrivateKey &sk) {
+        std::uniform_int_distribution<int> bitdist(0, 1);  // Declare here
+
+        for (int i = 0; i < K; ++i) {
+            pk.G[i].reset();
+            for (int j = 0; j < N; ++j) {
+                pk.G[i][j] = bitdist(rng);
+            }
+
+            // Optional: shuffle bits in each row (not typical in McEliece, but possible for experimentation)
+            shuffleBitset(pk.G[i]);
+        }
+
+        sk.pk = pk;
+    }
+
 
     CipherText encapsulate(const PublicKey &pk, SharedSecret &ss) {
         BitVec message = randomMessage();
@@ -62,6 +96,34 @@ public:
             message[i] = corrected[i];
 
         return { hash(message) };
+    }
+
+    void printPublicKey(const PublicKey &pk) {
+        qDebug() << "Public Key (Generator Matrix G):";
+        for (int i = 0; i < K; ++i) {
+            // Convert bitset to a QString and then print it
+            QString str = QString::fromStdString(pk.G[i].to_string());
+            qDebug() << str;
+        }
+    }
+
+    // Function to print the private key
+    void printPrivateKey(const PrivateKey &sk) {
+     qDebug() << "Private Key (Permutation):" ;
+        for (int i = 0; i < N; ++i) {
+     qDebug()  << sk.permutation[i] << " ";
+        }
+        printPublicKey(sk.pk); // Print the associated public key
+    }
+
+    // Function to print the ciphertext
+    void printCipherText(const CipherText &ct) {
+ //    qDebug()  << "Ciphertext (c): " << ct.c;
+    }
+
+    // Function to print shared secret
+    void printSharedSecret(const SharedSecret &ss) {
+    qDebug()  << "Shared Secret: " << ss.key.toHex() ;
     }
 
 private:

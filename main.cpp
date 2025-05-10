@@ -12,7 +12,9 @@ int main(int argc, char *argv[]) {
     PQCryptoLite::PrivateKey sk;
     kem.keygen(pk, sk);
     qDebug() << "Key generation complete!";
-
+ //qDebug() <<
+             kem.printPublicKey(pk);
+            // kem.printPrivateKey(sk);
     PQCryptoLite::SharedSecret senderSecret;
     PQCryptoLite::CipherText ct = kem.encapsulate(pk, senderSecret);
     qDebug() << "Encapsulation complete!";
